@@ -20,7 +20,10 @@ cantHojas :: AB a -> Int
 cantHojas = foldAB 0 (\hi _ hd -> 1 + hi + hd) 
 
 altura :: AB a -> Int 
-altura = foldAB 0 (\hi _ hd -> (max (hi+1) (hd+1))) 
+altura = foldAB 0 (\hi _ hd -> 1 + max hi hd) 
+
+cantNodos :: AB a -> Int
+cantNodos = foldAB 0 (\recIzq _ recDer -> 1 + recIzq + recDer) 
 
 --mejor segun puede salir con foldAB
 --mejorSegun :: Ord a => (a -> a -> Bool) -> [a] -> a
@@ -31,6 +34,5 @@ mejorSegun cNil f  = foldAB cNil (\hi r hd -> if (f hi hd && f hi r) then
                                                     hi else (if f hd r then hd else r)) 
 --como hacer sin el cNIl
 
-esABB :: Ord a => AB a -> Bool
 
 

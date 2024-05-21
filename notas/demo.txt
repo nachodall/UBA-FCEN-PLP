@@ -1,0 +1,127 @@
+
+forall u :: Universo , forall o :: Objeto. |  elem o (objetos_de u) -> elem (Right o) u
+
+Funcion objetos_de_u (y auxiliares que la complementan):
+
+objetos_en :: Universo -> [Objeto]
+objetos_en u =  map objeto_de (filter es_un_objeto u)
+
+objeto_de :: Either Personaje Objeto -> Objeto
+objeto_de (Right o) = o
+
+es_un_objeto :: Either Personaje Objeto -> Bool
+es_un_objeto (Left o) = False
+es_un_objeto (Right p) = True
+
+filter :: (a -> Bool) -> [a] -> [a]
+filter _ [] = []
+filter p (x:xs) | p x       = x : filter p xs
+                | otherwise = filter p xs
+
+map :: (a -> b) -> [a] -> [b]
+map _ []     = []
+map f (x:xs) = f x : map f xs
+
+elem :: Int -> [Int] -> Bool
+elem x [] = False
+elem x (y:ys) | x == y = True
+              | otherwise = elem x (ys)
+
+
+-- Hay que probar por induccion que :  elem o (objetos_de u) -> elem (Right o) u
+
+Como objetos_en u =  map objeto_de (filter es_un_objeto u), reemplazamos directamente por su ecuacion:
+
+    elem o ( map objeto_de (filter es_un_objeto u) ) -> elem (Right o) u
+
+-----------------------------------------------------------------------------------------------------------------------------
+
+1) Caso base: u = []
+
+P([]): elem o ( map objeto_de ( filter es_un_objeto [] ) ) -> elem (Right o) []
+
+filter _ [] = []                      reemplazando:  elem o (map objeto_de []) -> elem (Right o) []
+
+elem x [] = False                     reemplazando:  elem o (map objeto_de []) -> False
+
+map _ [] = []                         reemplazando: elem o [] -> False
+
+- def elem []                 ---- False -> False  lo cual es equivalente a True y queda probado el caso base.
+
+-----------------------------------------------------------------------------------------------------------------------------
+
+2) Hipotesis indictiva y paso inductivo.
+
+Nuestra Hipotesis inductiva es: 
+        P(xs): elem o (map objeto_de (filter es_un_objeto xs) ) -> elem (Right o) xs
+
+Y queremos ver que: P(xs) -> P(x:xs) forall x: Eiter Personaje Objeto, forall xs: [Eiter Personaje Objeto]
+
+con P(x:xs): elem o (map objeto_de (filter es_un_objeto x:xs)) -> elem (Right o) (x:xs)
+
+
+Comenzamos trabajando sobre P(x:xs):
+
+Como la def. de filter:
+filter p (x:xs) = if p x then x : filter p xs else filter p xs
+
+reemplazamos en P(x:xs):
+elem o (map objeto_de (if es_un_objeto x then x : filter es_un_objeto xs else filter es_un_objeto xs)) -> elem (Right o) (x:xs)
+
+Debemos ver que sucede en ambos casos del condicional:
+
+Caso es_un_objeto x == True: 
+    Por def. de es_un_objeto, para que es_un_objeto x == true, x, que es de tipo Eiter Personaje Objeto, debe ser un (Right x)  
+
+    Reemplazamos lo que sucede cuando la condicion es verdadera:
+    elem o (map objeto_de (x : filter es_un_objeto xs)) -> elem (Right o) (x:xs)
+
+    Por def. de map:
+    elem o (objeto_de x : map (objeto_de (filter es_un_objeto xs))) -> elem (Right o) (x:xs)
+    
+    Pero x es un objeto, o sea x = (Right x), entonces por def. de objeto_de:
+    elem o ((Right x) : map(objeto_de (filter es_un_objeto xs))) -> elem (Right o) (x:xs)
+
+    Ahora por def. de elem:
+    (o == Right x || elem o (map objeto_de (filter es_un_objeto xs))) -> elem (Right o) (x:xs)
+
+    Y vuelvo a separar en casos:
+    Caso o == Right x: 
+        o == Right x -> elem (Right o) (x:xs)
+        Por def de elem:
+        o == Right x -> Right o == x || elem (Right o) xs 
+        Pero si o == Right x, entonces o tambien es del tipo Right, luego o = Right(o) como vimos en objeto_de, entonces:
+        o == Right x -> Right o == x 
+        True -> True, lo cual es cierto.
+
+    Caso o != Right x:
+        elem o (map objeto_de (filter es_un_objeto xs)) -> elem (Right o) (x:xs)
+        Veamos que en nuestro antecedente tenemos la HI, entonces reemplazamos por el consecuente de la HI, y veamos por propiedades de la implicacion me basta probar:
+        elem (Right o) xs -> elem (Right o) (x:xs)
+        Por def de elem:
+        elem (Right o) xs -> x == Right O || elem (Right o) xs
+        Pero x != Right o, Luego 
+        elem (Right o) xs -> elem (Right o) xs 
+        Lo cual es cierto.
+    
+Ahora que ya vimos los casos donde es_un_objeto x == True, veamos:
+
+Caso es_un_objeto x == False:
+    Analogamente al caso anterior, aqui x no va a ser un Right x, si no un Left x por def. de de es_un_objeto
+
+    elem o (map objeto_de (filter es_un_objeto xs)) -> elem (Right o) (x:xs)    
+
+    Pero como podemos ver a la izquierda de la implicacion tenemos la HI, entonces reemplazamos:
+
+    elem (Rigth o) xs -> elem (Right o) (x:xs)
+    
+    Pero anteriormente probamos esta misma expresion (caso es_un_objeto x, caso 0 != right)
+
+Luego como vimos que para ambos casos se cumple que P(xs) -> P(x:xs) forall x: Either Personaje Objeto, forall xs: [Either Personaje Objeto]
+Podemos comprobar que elem o (objetos_de u) -> elem (Right o) u es cierto.å
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------

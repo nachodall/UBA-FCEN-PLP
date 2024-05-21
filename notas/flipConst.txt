@@ -1,0 +1,21 @@
+const :: a -> b -> a 
+id :: a -> a 
+constID :: (b -> a -> a)
+
+const id 1 2   -- Haskell evaluates 'const id' and returns a function (we can call it
+               -- 'constId') which accepts one argument and always returns 'id'
+
+constId 1 2    -- Haskell now evaluates 'constId 1', which as expected just returns 'id'
+
+id 2           -- 'id' is now applied to 2, which just returns '2'
+
+2              -- final result
+flip const = const id
+forall x:a, forall y:a 
+
+(flip const) x y = (const id) xy   sii
+(flip const) x y  = (const id x) y  sii 
+flip (\x y -> x) y x = id y   sii
+(\y x -> x) x y = y   sii 
+y = y
+
