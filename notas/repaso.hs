@@ -333,3 +333,102 @@ foldPoli cX cCte cSuma cProd t = case t of
 evaluarFoldeado :: Num a => a -> Polinomio a -> a
 evaluarFoldeado x = foldPoli x id (+) (*)
 
+data AT a = NilT | Tri a (AT a) (AT a) (AT a)
+
+foldAT :: b -> (a -> b -> b -> b -> b) -> AT a -> b
+foldAT cNil cBin NilT = cNil
+foldAT cNil cBin (Tri a h1 h2 h3) = cBin a (foldAT cNil cBin h1) (foldAT cNil cBin h2) (foldAT cNil cBin h3)
+
+preorder :: AT a -> [a]
+preorder = foldAT [] (\a izq med der -> a : (izq ++ med ++ der))
+
+mapAT :: (a -> b) -> AT a -> AT b 
+mapAT f = foldAT NilT (\a izq med der -> (Tri (f a) izq med der)) 
+
+nivel :: AT a -> Int -> [a] 
+nivel = foldAT (\i -> []) (\a izq med der -> \i -> 
+                                if i == 0 then [a] 
+                                else ((izq (i-1)) ++ (med (i-1)) ++ (der (i-1))))
+
+type MatrizInfinita a = Int -> Int -> a 
+
+comparar :: Eq a => MatrizInfinita a -> MatrizInfinita a -> MatrizInfinita Bool
+comparar m1 m2 = \i j -> (m1 i j) == (m2 i j) 
+
+recortar :: Int -> Int -> MatrizInfinita a -> [[a]] 
+recortar f c m = [[m i j | i <- [1..f]] | j <- [1..c]] 
+
+hayRepetidoHasta :: Eq a => Int -> Int -> MatrizInfinita a -> Bool 
+hayRepetidoHasta f c m = hayRepetidos (recortar f c m) 
+
+recr :: (a -> [a] -> b -> b) -> b -> [a] -> b
+recr f z []       = z
+recr f z (x : xs) = f x xs (recr f z xs)
+
+hayRepetidos :: Eq a => [a] -> Bool 
+hayRepetidos l = recr (\x xs acc -> if elem x xs then True else acc ) False l
+
+repetidosListaDeListas :: Eq a => [[a]] -> Bool
+repetidosListaDeListas l = hayRepetidos (aplanar l) 
+
+aplanar :: [[a]] -> [a]
+aplanar = foldr (\x acc -> x ++ acc) []
+
+data HashSet a = Hash (a -> Integer) (Integer -> [a])
+
+vacio :: (a -> Integer) -> HashSet a 
+vacio f = Hash f (const [])
+
+pertenece :: Eq a => a -> HashSet a -> Bool 
+pertenece x (Hash f tabla) = elem x (tabla (f x))
+
+agregar :: Eq a => a -> HashSet a -> HashSet a 
+agregar x (Hash f tabla) = if pertenece x (tabla (f x)) then (Hash f tabla) else 
+                            (Hash f (\y -> if y == (f x) then x : tabla (f x) else tabla  y))
+
+interseccion :: Eq a => HashSet a -> HashSet a -> HashSet a
+interseccion (Hash f1 tabla1) (Hash f2 tabla2) = Hash f1 nuevaTabla
+  where
+    nuevaTabla k = foldr (\e acc -> if pertenece e (Hash f2 tabla2) then e : acc else acc) [] (tabla1 k)
+
+
+foldr1 :: (a -> b -> b) -> [a] -> b
+foldr1 _ [x]    = x
+foldr1 f (x:xs) = f x (foldr1 f xs)
+foldr1 _ []     = error "Lista vacía en foldr1"
+
+foldr1confoldr :: (a -> b -> b) -> [a] -> b
+foldr1confoldr f l = if null l then (error "lista vacia en foldr1") else 
+                     foldr f [x] l
+
+maximo :: Ord a => [a] -> a 
+maximo xs = foldr1 max xs
+
+maxFoldr :: Ord a => [a] -> a 
+maxFoldr (y:ys) = foldr (\x recu -> max x recu) y (y:ys)
+
+type Tono = Integer 
+type Duracion = Integer 
+
+data Melodia = Silencio Duracion 
+                | Nota Tono Duracion
+                | Secuencia Melodia Melodia
+                | Paralelo [Melodia]
+
+foldMelodia :: (Duracion -> b) -> (Tono -> Duracion -> b) -> (b -> b -> b) -> ([b] -> b) -> Melodia -> b
+foldMelodia cSilencio cNota cSecuencia cParalelo melo = case melo of 
+    Silencio duracion -> cSilencio duracion 
+    Nota tono duracion -> cNota tono duracion 
+    Secuencia m1 m2 -> cSecuencia (recu m1) (recu m2)
+    Paralelo l -> cParalelo (map recu l)
+    where recu = foldMelodia cSilencio cNota cSecuencia cParalelo
+    
+
+duracionTotal :: Melodia -> Duracion 
+duracionTotal m = foldMelodia id (const id) (+) maximum m 
+
+truncar :: Melodia -> Duracion -> Melodia 
+truncar = foldMelodia (\dur -> \i -> if i < dur then Silencio i else Silencio dur) 
+                      (\tono dur -> \i -> if i < dur then Nota tono i else Nota tono dur)
+                      (\m1 m2 -> \i -> if i < (duracionTotal(m1) + duracionTotal(m2)) then Secuencia () ())
+                      (\recu -> \i -> if i < maximum recu then Paralelo (map ))
